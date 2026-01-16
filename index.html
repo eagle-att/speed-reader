@@ -157,13 +157,13 @@
             font-family: Georgia, 'Times New Roman', serif;
             font-size: 4rem;
             letter-spacing: 0.1em;
-            display: flex;
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
             align-items: center;
-            justify-content: center;
+            width: 100%;
         }
 
         .word-prefix {
-            width: 200px;
             text-align: right;
             white-space: nowrap;
             overflow: visible;
@@ -177,7 +177,6 @@
         }
 
         .word-suffix {
-            width: 200px;
             text-align: left;
             white-space: nowrap;
             overflow: visible;
@@ -289,10 +288,6 @@
             /* Word display - smaller font, flexible widths */
             .word-container {
                 font-size: 2.5rem;
-            }
-
-            .word-prefix, .word-suffix {
-                width: 40vw;
             }
 
             /* Hide keyboard shortcuts on mobile (not relevant for touch) */
