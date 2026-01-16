@@ -278,6 +278,77 @@
         .hidden {
             display: none !important;
         }
+
+        /* Mobile Responsiveness */
+        @media (max-width: 600px) {
+            /* Container - reduce padding */
+            .container {
+                padding: 1rem;
+            }
+
+            /* Word display - smaller font, flexible widths */
+            .word-container {
+                font-size: 2.5rem;
+            }
+
+            .word-prefix, .word-suffix {
+                width: 40vw;
+            }
+
+            /* Hide keyboard shortcuts on mobile (not relevant for touch) */
+            .shortcuts-box {
+                display: none;
+            }
+
+            .shortcuts-hint {
+                display: none;
+            }
+
+            /* ORP guides - shorter for mobile */
+            .orp-guide-top, .orp-guide-bottom {
+                height: 40px;
+            }
+
+            /* Reading screen padding */
+            #reading-screen {
+                padding: 1rem;
+            }
+
+            /* WPM display repositioned */
+            .wpm-display {
+                top: 1rem;
+                right: 1rem;
+            }
+
+            /* Speed slider - full width on mobile */
+            .speed-control {
+                flex-wrap: wrap;
+            }
+
+            .speed-control input[type="range"] {
+                width: 100%;
+            }
+
+            /* Progress text smaller */
+            .progress-text {
+                font-size: 0.8rem;
+                min-width: 70px;
+            }
+
+            /* Buttons - full width, stacked */
+            .button-row {
+                flex-direction: column;
+            }
+
+            .button-row .btn {
+                width: 100%;
+            }
+
+            /* Controls full width */
+            .controls {
+                max-width: 100%;
+            }
+        }
     </style>
 </head>
 <body>
@@ -753,6 +824,42 @@
         pauseBtn.addEventListener('click', togglePlayPause);
         backBtn.addEventListener('click', goBack);
         progressBar.addEventListener('click', seekToPosition);
+
+        // Touch gesture support for mobile
+        const wordDisplay = document.querySelector('.word-display');
+        let touchStartX = 0;
+        let touchStartY = 0;
+
+        // Tap to pause/play
+        wordContainer.addEventListener('click', (e) => {
+            if (readingScreen.style.display === 'flex') {
+                togglePlayPause();
+            }
+        });
+
+        // Swipe left/right for navigation
+        wordDisplay.addEventListener('touchstart', (e) => {
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+        }, { passive: true });
+
+        wordDisplay.addEventListener('touchend', (e) => {
+            if (readingScreen.style.display !== 'flex') return;
+
+            const touchEndX = e.changedTouches[0].clientX;
+            const touchEndY = e.changedTouches[0].clientY;
+            const diffX = touchEndX - touchStartX;
+            const diffY = touchEndY - touchStartY;
+
+            // Only trigger if horizontal swipe is dominant and exceeds threshold
+            if (Math.abs(diffX) > 50 && Math.abs(diffX) > Math.abs(diffY)) {
+                if (diffX > 0) {
+                    prevWord();  // Swipe right = previous word
+                } else {
+                    nextWord();  // Swipe left = next word
+                }
+            }
+        }, { passive: true });
 
         // Keyboard shortcuts
         document.addEventListener('keydown', (e) => {
