@@ -634,6 +634,16 @@
 
         // Fetch URL content
         async function fetchURL(url) {
+            // Clean URL - strip query params and fragments
+            try {
+                const urlObj = new URL(url);
+                urlObj.search = '';
+                urlObj.hash = '';
+                url = urlObj.toString();
+            } catch (e) {
+                // If URL parsing fails, continue with original
+            }
+
             try {
                 // Special handling for Wikipedia
                 if (isWikipediaURL(url)) {
