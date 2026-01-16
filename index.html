@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RSVP Speed Reader</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #1a1a1a;
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+            padding: 2rem;
+        }
+
+        /* Input Screen */
+        #input-screen {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        #input-screen h1 {
+            text-align: center;
+            font-weight: 300;
+            font-size: 1.8rem;
+            color: #ccc;
+        }
+
+        #text-input {
+            width: 100%;
+            height: 200px;
+            padding: 1rem;
+            font-size: 1rem;
+            background: #2a2a2a;
+            border: 1px solid #444;
+            border-radius: 8px;
+            color: #fff;
+            resize: vertical;
+        }
+
+        #text-input::placeholder {
+            color: #666;
+        }
+
+        #text-input:focus {
+            outline: none;
+            border-color: #666;
+        }
+
+        .speed-control {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            justify-content: center;
+        }
+
+        .speed-control label {
+            color: #888;
+        }
+
+        .speed-control input[type="range"] {
+            width: 200px;
+            accent-color: #e74c3c;
+        }
+
+        .speed-value {
+            min-width: 80px;
+            color: #fff;
+        }
+
+        .btn {
+            padding: 0.8rem 2rem;
+            font-size: 1rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-primary {
+            background: #e74c3c;
+            color: #fff;
+            align-self: center;
+        }
+
+        .btn-primary:hover {
+            background: #c0392b;
+        }
+
+        .btn-primary:disabled {
+            background: #555;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background: #333;
+            color: #aaa;
+        }
+
+        .btn-secondary:hover {
+            background: #444;
+        }
+
+        /* Reading Screen */
+        #reading-screen {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+            padding: 2rem;
+        }
+
+        .word-display {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            position: relative;
+        }
+
+        .orp-guide {
+            position: absolute;
+            width: 2px;
+            background: #444;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .orp-guide-top {
+            top: 30%;
+            height: 60px;
+        }
+
+        .orp-guide-bottom {
+            bottom: 30%;
+            height: 60px;
+        }
+
+        .word-container {
+            font-family: Georgia, 'Times New Roman', serif;
+            font-size: 4rem;
+            letter-spacing: 0.1em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .word-prefix {
+            width: 200px;
+            text-align: right;
+            white-space: nowrap;
+            overflow: visible;
+        }
+
+        .word-orp {
+            color: #e74c3c;
+            width: 1ch;
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        .word-suffix {
+            width: 200px;
+            text-align: left;
+            white-space: nowrap;
+            overflow: visible;
+        }
+
+        .controls {
+            width: 100%;
+            max-width: 600px;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            padding-bottom: 2rem;
+        }
+
+        .progress-container {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .progress-bar {
+            flex: 1;
+            height: 8px;
+            background: #333;
+            border-radius: 4px;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #e74c3c;
+            border-radius: 4px;
+            transition: width 0.1s;
+        }
+
+        .progress-text {
+            color: #888;
+            font-size: 0.9rem;
+            min-width: 80px;
+            text-align: right;
+        }
+
+        .wpm-display {
+            position: absolute;
+            top: 2rem;
+            right: 2rem;
+            color: #666;
+            font-size: 1rem;
+        }
+
+        .shortcuts-box {
+            position: absolute;
+            top: 2rem;
+            left: 2rem;
+            color: #444;
+            font-size: 0.75rem;
+            line-height: 1.6;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        .shortcuts-box kbd {
+            display: inline-block;
+            min-width: 1.2em;
+            padding: 0.1em 0.4em;
+            margin-right: 0.3em;
+            background: #2a2a2a;
+            border-radius: 3px;
+            font-family: inherit;
+            text-align: center;
+        }
+
+        .button-row {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+        }
+
+        .shortcuts-hint {
+            text-align: center;
+            color: #555;
+            font-size: 0.8rem;
+            margin-top: 1rem;
+        }
+
+        .error-message {
+            color: #e74c3c;
+            text-align: center;
+            font-size: 0.9rem;
+        }
+
+        .estimate {
+            color: #888;
+            text-align: center;
+            font-size: 0.9rem;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Input Screen -->
+        <div id="input-screen">
+            <h1>RSVP Speed Reader</h1>
+            <textarea id="text-input" placeholder="Paste text or URL here..."></textarea>
+            <div class="speed-control">
+                <label>Speed:</label>
+                <input type="range" id="speed-slider" min="100" max="1000" value="500" step="25">
+                <span class="speed-value"><span id="speed-display">500</span> WPM</span>
+            </div>
+            <button class="btn btn-primary" id="start-btn" disabled>Start Reading</button>
+            <p id="estimate" class="estimate hidden"></p>
+            <p id="error-msg" class="error-message hidden"></p>
+            <p class="shortcuts-hint">Space: Play/Pause | Arrows: Navigate | ↑↓: Speed | R: Restart | Esc: Back</p>
+        </div>
+
+        <!-- Reading Screen -->
+        <div id="reading-screen">
+            <div class="shortcuts-box">
+                <div><kbd>Space</kbd> play/pause</div>
+                <div><kbd>←</kbd><kbd>→</kbd> prev/next</div>
+                <div><kbd>↑</kbd><kbd>↓</kbd> speed</div>
+                <div><kbd>R</kbd> restart</div>
+                <div><kbd>Esc</kbd> back</div>
+            </div>
+            <div class="wpm-display"><span id="wpm-value">500</span> wpm</div>
+            <div class="word-display">
+                <div class="orp-guide orp-guide-top"></div>
+                <div class="word-container" id="word-container"></div>
+                <div class="orp-guide orp-guide-bottom"></div>
+            </div>
+            <div class="controls">
+                <div class="progress-container">
+                    <div class="progress-bar" id="progress-bar">
+                        <div class="progress-fill" id="progress-fill"></div>
+                    </div>
+                    <span class="progress-text"><span id="current-word">0</span>/<span id="total-words">0</span> · <span id="time-remaining">0:00</span></span>
+                </div>
+                <div class="button-row">
+                    <button class="btn btn-primary" id="pause-btn">Pause</button>
+                    <button class="btn btn-secondary" id="back-btn">← Back to Input</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // State
+        let words = [];
+        let currentIndex = 0;
+        let wpm = 500;
+        let isPlaying = false;
+        let playInterval = null;
+
+        // DOM Elements
+        const inputScreen = document.getElementById('input-screen');
+        const readingScreen = document.getElementById('reading-screen');
+        const textInput = document.getElementById('text-input');
+        const speedSlider = document.getElementById('speed-slider');
+        const speedDisplay = document.getElementById('speed-display');
+        const startBtn = document.getElementById('start-btn');
+        const errorMsg = document.getElementById('error-msg');
+        const wordContainer = document.getElementById('word-container');
+        const wpmValue = document.getElementById('wpm-value');
+        const progressFill = document.getElementById('progress-fill');
+        const progressBar = document.getElementById('progress-bar');
+        const currentWordSpan = document.getElementById('current-word');
+        const totalWordsSpan = document.getElementById('total-words');
+        const pauseBtn = document.getElementById('pause-btn');
+        const backBtn = document.getElementById('back-btn');
+        const timeRemaining = document.getElementById('time-remaining');
+        const estimate = document.getElementById('estimate');
+
+        // Calculate ORP position (0-indexed)
+        // Based on Spritz algorithm: ceil((length - 1) / 4)
+        // Places ORP at roughly first third of word
+        function getORPPosition(word) {
+            const len = word.length;
+            if (len === 0) return 0;
+            let orp = Math.ceil((len - 1) / 4);
+            // Adjust if ORP lands on non-letter (punctuation)
+            if (!/[a-zA-Z]/.test(word[orp]) && orp > 0) {
+                orp--;
+            }
+            return orp;
+        }
+
+        // Render word with ORP highlighting
+        function renderWord(word) {
+            if (!word) {
+                wordContainer.innerHTML = '<span class="word-prefix"></span><span class="word-orp"></span><span class="word-suffix"></span>';
+                return;
+            }
+
+            const orpPos = getORPPosition(word);
+            const prefix = word.slice(0, orpPos);
+            const orp = word[orpPos];
+            const suffix = word.slice(orpPos + 1);
+
+            wordContainer.innerHTML = `<span class="word-prefix">${prefix}</span><span class="word-orp">${orp}</span><span class="word-suffix">${suffix}</span>`;
+        }
+
+        // Format seconds as m:ss
+        function formatTime(totalSeconds) {
+            const mins = Math.floor(totalSeconds / 60);
+            const secs = Math.floor(totalSeconds % 60);
+            return `${mins}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        // Update estimate on input screen
+        function updateEstimate() {
+            const text = textInput.value.trim();
+            if (!text || isURL(text)) {
+                estimate.classList.add('hidden');
+                return;
+            }
+            const wordCount = parseText(text).length;
+            if (wordCount === 0) {
+                estimate.classList.add('hidden');
+                return;
+            }
+            const seconds = (wordCount / wpm) * 60;
+            estimate.textContent = `${wordCount} words · ${formatTime(seconds)} at ${wpm} wpm`;
+            estimate.classList.remove('hidden');
+        }
+
+        // Update progress display
+        function updateProgress() {
+            const progress = words.length > 0 ? ((currentIndex + 1) / words.length) * 100 : 0;
+            progressFill.style.width = `${progress}%`;
+            currentWordSpan.textContent = currentIndex + 1;
+
+            // Calculate time remaining
+            const wordsLeft = words.length - currentIndex - 1;
+            const secondsLeft = (wordsLeft / wpm) * 60;
+            timeRemaining.textContent = formatTime(secondsLeft);
+        }
+
+        // Parse text into words
+        function parseText(text) {
+            return text
+                .replace(/\s+/g, ' ')
+                .trim()
+                .split(' ')
+                .filter(word => word.length > 0);
+        }
+
+        // Check if input is a URL
+        function isURL(str) {
+            try {
+                const url = new URL(str.trim());
+                return url.protocol === 'http:' || url.protocol === 'https:';
+            } catch {
+                return false;
+            }
+        }
+
+        // Extract text from HTML
+        function extractTextFromHTML(html) {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+
+            // Remove scripts, styles, nav, footer, etc.
+            const removeSelectors = ['script', 'style', 'nav', 'footer', 'header', 'aside', 'noscript', '.subscribe-widget', '.subscription-widget', '.paywall'];
+            removeSelectors.forEach(sel => {
+                doc.querySelectorAll(sel).forEach(el => el.remove());
+            });
+
+            // Try Substack-specific selectors first
+            const substackBody = doc.querySelector('.body.markup') || doc.querySelector('.post-content') || doc.querySelector('.available-content');
+            if (substackBody) {
+                const paragraphs = substackBody.querySelectorAll('p');
+                if (paragraphs.length > 0) {
+                    return Array.from(paragraphs).map(p => p.textContent).join(' ').trim();
+                }
+                return substackBody.textContent.trim();
+            }
+
+            // Try to find article content
+            const article = doc.querySelector('article') || doc.querySelector('main') || doc.querySelector('.content') || doc.body;
+
+            // Get text from paragraphs
+            const paragraphs = article.querySelectorAll('p');
+            if (paragraphs.length > 0) {
+                return Array.from(paragraphs).map(p => p.textContent).join(' ').trim();
+            }
+
+            return article.textContent.trim();
+        }
+
+        // Check if URL is Wikipedia
+        function isWikipediaURL(url) {
+            return /^https?:\/\/([a-z]{2,3})\.wikipedia\.org\/wiki\/.+/i.test(url);
+        }
+
+        // Check if URL is Substack
+        function isSubstackURL(url) {
+            return /^https?:\/\/([a-z0-9-]+\.)?substack\.com\/p\/.+/i.test(url) ||
+                   /^https?:\/\/[a-z0-9-]+\.[a-z0-9-]+\.[a-z]+\/p\/.+/i.test(url);
+        }
+
+        // Extract Substack publication feed URL and post slug
+        function parseSubstackURL(url) {
+            // Handle both yourname.substack.com/p/post and custom domains
+            const match = url.match(/^https?:\/\/([a-z0-9-]+)\.substack\.com\/p\/([a-z0-9-]+)/i);
+            if (match) {
+                return {
+                    feedUrl: `https://${match[1]}.substack.com/feed`,
+                    postSlug: match[2]
+                };
+            }
+            // For custom domains, try to extract from the URL structure
+            const customMatch = url.match(/^https?:\/\/([^/]+)\/p\/([a-z0-9-]+)/i);
+            if (customMatch) {
+                return {
+                    feedUrl: `https://${customMatch[1]}/feed`,
+                    postSlug: customMatch[2]
+                };
+            }
+            return null;
+        }
+
+        // Fetch Substack article via RSS feed + rss2json proxy
+        async function fetchSubstack(url) {
+            const parsed = parseSubstackURL(url);
+            if (!parsed) throw new Error('Invalid Substack URL');
+
+            const rss2jsonUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(parsed.feedUrl)}`;
+
+            const response = await fetch(rss2jsonUrl);
+            if (!response.ok) throw new Error('Failed to fetch Substack feed');
+
+            const data = await response.json();
+            if (data.status !== 'ok') throw new Error('Failed to parse Substack feed');
+
+            // Find the matching article
+            const article = data.items.find(item =>
+                item.link.includes(`/p/${parsed.postSlug}`)
+            );
+
+            if (!article) {
+                throw new Error('Article not found in feed. It may be paywalled or older than recent posts.');
+            }
+
+            // Extract text from HTML content
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(article.content, 'text/html');
+            return doc.body.textContent.trim();
+        }
+
+        // Fetch Wikipedia article via API
+        async function fetchWikipedia(url) {
+            const match = url.match(/^https?:\/\/([a-z]{2,3})\.wikipedia\.org\/wiki\/(.+)/i);
+            if (!match) throw new Error('Invalid Wikipedia URL');
+
+            const lang = match[1];
+            const title = decodeURIComponent(match[2].split('#')[0]); // Remove anchor
+
+            const apiUrl = `https://${lang}.wikipedia.org/w/api.php?action=query&format=json&origin=*&titles=${encodeURIComponent(title)}&prop=extracts&explaintext`;
+
+            const response = await fetch(apiUrl);
+            if (!response.ok) throw new Error('Failed to fetch from Wikipedia');
+
+            const data = await response.json();
+            const pages = data.query.pages;
+            const pageId = Object.keys(pages)[0];
+
+            if (pageId === '-1') throw new Error('Wikipedia article not found');
+
+            return pages[pageId].extract;
+        }
+
+        // Fetch via CORS proxy as fallback
+        async function fetchViaCorsProxy(url) {
+            const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
+            const response = await fetch(proxyUrl);
+            if (!response.ok) throw new Error('Failed to fetch via proxy');
+            return await response.text();
+        }
+
+        // Fetch URL content
+        async function fetchURL(url) {
+            try {
+                // Special handling for Wikipedia
+                if (isWikipediaURL(url)) {
+                    return await fetchWikipedia(url);
+                }
+
+                // Special handling for Substack newsletter posts (RSS approach)
+                if (isSubstackURL(url)) {
+                    return await fetchSubstack(url);
+                }
+
+                // Try direct fetch first
+                try {
+                    const response = await fetch(url);
+                    if (response.ok) {
+                        const contentType = response.headers.get('content-type') || '';
+                        const text = await response.text();
+                        if (contentType.includes('text/html')) {
+                            return extractTextFromHTML(text);
+                        }
+                        return text;
+                    }
+                } catch (directErr) {
+                    // Direct fetch failed (likely CORS), try proxy
+                }
+
+                // Fallback to CORS proxy
+                const html = await fetchViaCorsProxy(url);
+                return extractTextFromHTML(html);
+
+            } catch (err) {
+                throw new Error(err.message || 'Failed to fetch content. Please copy the text and paste it instead.');
+            }
+        }
+
+        // Start reading
+        async function startReading() {
+            const input = textInput.value.trim();
+            if (!input) return;
+
+            errorMsg.classList.add('hidden');
+            startBtn.disabled = true;
+            startBtn.textContent = 'Loading...';
+
+            try {
+                let text = input;
+                if (isURL(input)) {
+                    text = await fetchURL(input);
+                }
+
+                words = parseText(text);
+                if (words.length === 0) {
+                    throw new Error('No readable text found.');
+                }
+
+                currentIndex = 0;
+                totalWordsSpan.textContent = words.length;
+
+                inputScreen.style.display = 'none';
+                readingScreen.style.display = 'flex';
+
+                renderWord(words[currentIndex]);
+                updateProgress();
+                play();
+
+            } catch (err) {
+                errorMsg.textContent = err.message;
+                errorMsg.classList.remove('hidden');
+            } finally {
+                startBtn.disabled = false;
+                startBtn.textContent = 'Start Reading';
+            }
+        }
+
+        // Playback controls
+        function play() {
+            if (isPlaying) return;
+            isPlaying = true;
+            pauseBtn.textContent = 'Pause';
+
+            const interval = 60000 / wpm;
+            playInterval = setInterval(() => {
+                if (currentIndex < words.length - 1) {
+                    currentIndex++;
+                    renderWord(words[currentIndex]);
+                    updateProgress();
+                } else {
+                    pause();
+                }
+            }, interval);
+        }
+
+        function pause() {
+            isPlaying = false;
+            pauseBtn.textContent = 'Play';
+            if (playInterval) {
+                clearInterval(playInterval);
+                playInterval = null;
+            }
+        }
+
+        function togglePlayPause() {
+            if (isPlaying) {
+                pause();
+            } else {
+                play();
+            }
+        }
+
+        function restart() {
+            pause();
+            currentIndex = 0;
+            renderWord(words[currentIndex]);
+            updateProgress();
+        }
+
+        function goBack() {
+            pause();
+            words = [];
+            currentIndex = 0;
+            readingScreen.style.display = 'none';
+            inputScreen.style.display = 'flex';
+        }
+
+        function nextWord() {
+            if (currentIndex < words.length - 1) {
+                const wasPlaying = isPlaying;
+                pause();
+                currentIndex++;
+                renderWord(words[currentIndex]);
+                updateProgress();
+                if (wasPlaying) play();
+            }
+        }
+
+        function prevWord() {
+            if (currentIndex > 0) {
+                const wasPlaying = isPlaying;
+                pause();
+                currentIndex--;
+                renderWord(words[currentIndex]);
+                updateProgress();
+                if (wasPlaying) play();
+            }
+        }
+
+        function adjustSpeed(delta) {
+            wpm = Math.max(100, Math.min(1000, wpm + delta));
+            speedSlider.value = wpm;
+            speedDisplay.textContent = wpm;
+            wpmValue.textContent = wpm;
+            updateProgress();
+
+            if (isPlaying) {
+                pause();
+                play();
+            }
+        }
+
+        function seekToPosition(e) {
+            const rect = progressBar.getBoundingClientRect();
+            const percent = (e.clientX - rect.left) / rect.width;
+            const newIndex = Math.floor(percent * words.length);
+
+            const wasPlaying = isPlaying;
+            pause();
+            currentIndex = Math.max(0, Math.min(words.length - 1, newIndex));
+            renderWord(words[currentIndex]);
+            updateProgress();
+            if (wasPlaying) play();
+        }
+
+        // Event Listeners
+        textInput.addEventListener('input', () => {
+            startBtn.disabled = textInput.value.trim().length === 0;
+            updateEstimate();
+        });
+
+        speedSlider.addEventListener('input', (e) => {
+            wpm = parseInt(e.target.value);
+            speedDisplay.textContent = wpm;
+            wpmValue.textContent = wpm;
+            if (words.length > 0) updateProgress();
+            updateEstimate();
+        });
+
+        startBtn.addEventListener('click', startReading);
+        pauseBtn.addEventListener('click', togglePlayPause);
+        backBtn.addEventListener('click', goBack);
+        progressBar.addEventListener('click', seekToPosition);
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            // Only handle shortcuts when not typing in textarea
+            if (document.activeElement === textInput && e.key !== 'Escape') {
+                return;
+            }
+
+            switch (e.key) {
+                case ' ':
+                    e.preventDefault();
+                    if (readingScreen.style.display === 'flex') {
+                        togglePlayPause();
+                    } else if (textInput.value.trim()) {
+                        startReading();
+                    }
+                    break;
+                case 'ArrowLeft':
+                    e.preventDefault();
+                    prevWord();
+                    break;
+                case 'ArrowRight':
+                    e.preventDefault();
+                    nextWord();
+                    break;
+                case 'ArrowUp':
+                    e.preventDefault();
+                    adjustSpeed(25);
+                    break;
+                case 'ArrowDown':
+                    e.preventDefault();
+                    adjustSpeed(-25);
+                    break;
+                case 'r':
+                case 'R':
+                    if (readingScreen.style.display === 'flex') {
+                        e.preventDefault();
+                        restart();
+                    }
+                    break;
+                case 'Escape':
+                    e.preventDefault();
+                    if (readingScreen.style.display === 'flex') {
+                        goBack();
+                    }
+                    break;
+            }
+        });
+    </script>
+</body>
+</html>
