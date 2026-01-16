@@ -157,13 +157,16 @@
             font-family: Georgia, 'Times New Roman', serif;
             font-size: 4rem;
             letter-spacing: 0.1em;
-            display: grid;
-            grid-template-columns: 1fr auto 1fr;
+            display: flex;
             align-items: center;
+            justify-content: center;
             width: 100%;
+            position: relative;
         }
 
         .word-prefix {
+            flex: 1 1 0;
+            min-width: 0;
             text-align: right;
             white-space: nowrap;
             overflow: visible;
@@ -171,11 +174,15 @@
 
         .word-orp {
             color: #e74c3c;
+            flex: 0 0 auto;
             text-align: center;
-            letter-spacing: 0;
+            position: relative;
+            left: -0.05em;
         }
 
         .word-suffix {
+            flex: 1 1 0;
+            min-width: 0;
             text-align: left;
             white-space: nowrap;
             overflow: visible;
